@@ -1,0 +1,17 @@
+{
+	"name": "AdventureWorks_Customers",
+	"properties": {
+		"content": {
+			"query": "\nCREATE VIEW gold.calander\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Customers/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Customers\n\n)",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "AdventureWorks",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
