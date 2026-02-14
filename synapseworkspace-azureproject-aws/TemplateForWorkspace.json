@@ -1,0 +1,228 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "synapseworkspace-azureproject-aws"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"synapseworkspace-azureproject-aws-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'synapseworkspace-azureproject-aws-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapseworkspace-azureproject-aws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://saawstoragedatalake.dfs.core.windows.net/"
+		},
+		"synapseworkspace-azureproject-aws-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://defaultsynas.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapseworkspace-azureproject-aws-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('synapseworkspace-azureproject-aws-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapseworkspace-azureproject-aws-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('synapseworkspace-azureproject-aws-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AdventureWorks_Customers')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nCREATE VIEW gold.calander\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Customers/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Customers\n\n)",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "AdventureWorks",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Conncections')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\n CREATE MASTER KEY ENCRYPTION BY PASSWORD = '*********';  \n\nCREATE DATABASE SCOPED CREDENTIAL cred_naman\nWITH\n    IDENTITY = 'Managed Identity';\n\nCREATE EXTERNAL DATA SOURCE source_silver\nWITH \n(\n    LOCATION = 'https://saawstoragedatalake.dfs.core.windows.net/silver',\n    CREDENTIAL = cred_naman\n);\n\nCREATE EXTERNAL DATA SOURCE source_gold\nWITH \n(\n    LOCATION = 'https://saawstoragedatalake.dfs.core.windows.net/gold',\n    CREDENTIAL = cred_naman\n);\nCREATE EXTERNAL FILE FORMAT format_parquet\nWITH\n(\n    FORMAT_TYPE = PARQUET\n);\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Views')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nCREATE gold.calander\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Calendar/',\n    FORMAT='PARQUET'\n) as calander\n)\nCREATE VIEW gold.Customers\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Customers/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Customers\n)\n\nCREATE VIEW gold.Product_Categories\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Product_Categories/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Product_Categories\n)\n\nCREATE VIEW gold.Products\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Products/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Products\n)\n\nCREATE VIEW gold.Returns\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Returns/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Returns\n)\n\nCREATE VIEW gold.Sales\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Sales/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Sales\n)\n\nCREATE VIEW gold.Territories\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/AdventureWorks_Territories/',\n    FORMAT='PARQUET'\n) as AdventureWorks_Territories\n)\n\nCREATE VIEW gold.Subcategories\nAS\n(\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://saawstoragedatalake.dfs.core.windows.net/silver/Product_Subcategories/',\n    FORMAT='PARQUET'\n) as Product_Subcategories\n)",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "AdventureWorks",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create external table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE EXTERNAL TABLE gold.extsales\nWITH\n(\n    LOCATION = 'extsales',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT *\nFROM gold.sales;\n\nCREATE EXTERNAL TABLE gold.extCalendar\nWITH (\n    LOCATION = 'extCalendar',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.calander;\n\n\nCREATE EXTERNAL TABLE gold.extCustomers\nWITH (\n    LOCATION = 'extCustomers',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Customers;\n\nCREATE EXTERNAL TABLE gold.extProduct_Categories\nWITH (\n    LOCATION = 'extProduct_Categories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Product_Categories;\n\nCREATE EXTERNAL TABLE gold.extProducts\nWITH (\n    LOCATION = 'extProducts',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Products;\n\nCREATE EXTERNAL TABLE gold.extReturns\nWITH (\n    LOCATION = 'extReturns',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Returns;\n\nCREATE EXTERNAL TABLE gold.extSubcategories\nWITH (\n    LOCATION = 'extSubcategories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Subcategories;\n\n\nCREATE EXTERNAL TABLE gold.extTerritories\nWITH (\n    LOCATION = 'extTerritories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Territories;\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "AdventureWorks",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create_schema')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nCREATE SCHEMA gold;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "AdventureWorks",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		}
+	]
+}
