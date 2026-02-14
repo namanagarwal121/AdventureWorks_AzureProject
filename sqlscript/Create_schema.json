@@ -1,0 +1,17 @@
+{
+	"name": "Create_schema",
+	"properties": {
+		"content": {
+			"query": "\nCREATE SCHEMA gold;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "AdventureWorks",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
