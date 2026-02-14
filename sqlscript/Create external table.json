@@ -1,0 +1,17 @@
+{
+	"name": "Create external table",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL TABLE gold.extsales\nWITH\n(\n    LOCATION = 'extsales',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT *\nFROM gold.sales;\n\nCREATE EXTERNAL TABLE gold.extCalendar\nWITH (\n    LOCATION = 'extCalendar',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.calander;\n\n\nCREATE EXTERNAL TABLE gold.extCustomers\nWITH (\n    LOCATION = 'extCustomers',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Customers;\n\nCREATE EXTERNAL TABLE gold.extProduct_Categories\nWITH (\n    LOCATION = 'extProduct_Categories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Product_Categories;\n\nCREATE EXTERNAL TABLE gold.extProducts\nWITH (\n    LOCATION = 'extProducts',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Products;\n\nCREATE EXTERNAL TABLE gold.extReturns\nWITH (\n    LOCATION = 'extReturns',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Returns;\n\nCREATE EXTERNAL TABLE gold.extSubcategories\nWITH (\n    LOCATION = 'extSubcategories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Subcategories;\n\n\nCREATE EXTERNAL TABLE gold.extTerritories\nWITH (\n    LOCATION = 'extTerritories',\n    DATA_SOURCE = source_gold,\n    FILE_FORMAT = format_parquet\n)\nAS\nSELECT * FROM gold.Territories;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "AdventureWorks",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

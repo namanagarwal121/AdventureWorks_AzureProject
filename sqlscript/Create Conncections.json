@@ -1,0 +1,17 @@
+{
+	"name": "Create Conncections",
+	"properties": {
+		"content": {
+			"query": "\n CREATE MASTER KEY ENCRYPTION BY PASSWORD = '*********';  \n\nCREATE DATABASE SCOPED CREDENTIAL cred_naman\nWITH\n    IDENTITY = 'Managed Identity';\n\nCREATE EXTERNAL DATA SOURCE source_silver\nWITH \n(\n    LOCATION = 'https://saawstoragedatalake.dfs.core.windows.net/silver',\n    CREDENTIAL = cred_naman\n);\n\nCREATE EXTERNAL DATA SOURCE source_gold\nWITH \n(\n    LOCATION = 'https://saawstoragedatalake.dfs.core.windows.net/gold',\n    CREDENTIAL = cred_naman\n);\nCREATE EXTERNAL FILE FORMAT format_parquet\nWITH\n(\n    FORMAT_TYPE = PARQUET\n);\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
